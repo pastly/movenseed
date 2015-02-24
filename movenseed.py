@@ -56,6 +56,43 @@ def prework(passed_source_dirname, absolute_source_dirname):
 
 
 if __name__ == "__main__":
-    a = "/tmp/testing/"
-    b = os.path.realpath(a)
-    prework(a, b)
+    descrip = '''
+Advanced file linker.'''
+    epil = '''
+Prework requires either a torrentfile OR at least one here.
+Postwork requires at least one here AND at least one there.'''
+    parser = argparse.ArgumentParser(
+        description=descrip,
+        epilog=epil,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument('-j', '--job', choices=['prework','postwork'], required=True)
+    parser.add_argument('-H', '--here', metavar='dir', nargs='+')
+    parser.add_argument('-T', '--there', metavar='dir', nargs='+')
+    parser.add_argument('-t', '--torrent', metavar='torrentfile')
+    args = parser.parse_args()
+    if (args.job == 'prework'):
+        if (not args.here and not args.torrent):
+            #parser.print_help()
+            print("Need --here or --torrent")
+        elif (args.there):
+            #parser.print_help()
+            print("--there doesn't make sense with prework")
+        else:
+            if (args.here):
+                print(args.here)
+            else:
+                print(args.torrent)
+    else:
+        if (not args.here or not args.there):
+            #parser.print_help()
+            print("Need --here and --there")
+        elif (args.torrent):
+            #parser.print_help()
+            print("--torrent doesn't make sense with postwork")
+        else:
+            print(args.here)
+            print(args.there)
+    #a = "/tmp/testing/"
+    #b = os.path.realpath(a)
+    #prework(a, b)
