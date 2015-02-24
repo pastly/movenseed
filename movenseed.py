@@ -210,15 +210,21 @@ Postwork requires at least one here AND at least one there.'''
         epilog=epil,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('-j', '--job', choices=['prework','postwork'], required=True)
+    parser.add_argument(
+        '-s', '--stage',
+        choices=['prework','postwork'],
+        required=True
+    )
     parser.add_argument('-H', '--here', metavar='dir', nargs='+')
     parser.add_argument('-T', '--there', metavar='dir', nargs='+')
     parser.add_argument('-t', '--torrent', metavar='torrentfile')
     parser.add_argument('--skip-filesize', action='store_const', const=1)
     args = parser.parse_args()
-    if (args.job == 'prework'):
+
     global skip_filesize
     skip_filesize = (True if args.skip_filesize else False)
+
+    if (args.stage == 'prework'):
         if (not args.here and not args.torrent):
             print("Need --here or --torrent")
         elif (args.there):
