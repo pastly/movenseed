@@ -30,10 +30,9 @@ def prework_do_files(filelist, root_dirname, size_info, hash_info):
 def prework_do_directory(dirname, root_dirname, size_info, hash_info):
     contained_files = []
     contained_directories = []
-    for path, dirs, files in os.walk(dirname):
+    for _, dirs, files in os.walk(dirname):
         contained_files.extend(files)
         contained_directories.extend(dirs)
-        break
     contained_files = [dirname+"/"+f for f in contained_files]
     contained_directories = [dirname+"/"+d for d in contained_directories]
     prework_do_files(contained_files, root_dirname, size_info, hash_info)
@@ -45,7 +44,6 @@ def prework(passed_source_dirname, absolute_source_dirname):
     size_info = []
     hash_info = []
     prework_do_directory(passed_source_dirname, absolute_source_dirname, size_info, hash_info)
-    #prework_do_directory(source_dirname, size_info, hash_info)
     with open(absolute_source_dirname+"/sizes.mns", "w") as size_outfile:
         for item in size_info:
             size_outfile.write(item)
@@ -58,10 +56,7 @@ def dispatch_prework(heres, torrentfile):
         print("Not yet implemented")
     elif (heres):
         for here in heres:
-            prework(
-                here,
-                os.path.realpath(here)
-            )
+            prework(here, os.path.realpath(here))
     else:
         print("How did you get this far without getting caught?")
 
