@@ -53,7 +53,17 @@ def prework(passed_source_dirname, absolute_source_dirname):
         for item in hash_info:
             hash_outfile.write(item)
 
-
+def dispatch_prework(heres, torrentfile):
+    if (not heres and torrentfile):
+        print("Not yet implemented")
+    elif (heres):
+        for here in heres:
+            prework(
+                here,
+                os.path.realpath(here)
+            )
+    else:
+        print("How did you get this far without getting caught?")
 
 if __name__ == "__main__":
     descrip = '''
@@ -73,22 +83,15 @@ Postwork requires at least one here AND at least one there.'''
     args = parser.parse_args()
     if (args.job == 'prework'):
         if (not args.here and not args.torrent):
-            #parser.print_help()
             print("Need --here or --torrent")
         elif (args.there):
-            #parser.print_help()
             print("--there doesn't make sense with prework")
         else:
-            if (args.here):
-                print(args.here)
-            else:
-                print(args.torrent)
+            dispatch_prework(args.here, args.torrent)
     else:
         if (not args.here or not args.there):
-            #parser.print_help()
             print("Need --here and --there")
         elif (args.torrent):
-            #parser.print_help()
             print("--torrent doesn't make sense with postwork")
         else:
             print(args.here)
