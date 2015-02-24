@@ -3,6 +3,8 @@ import os
 import hashlib
 import argparse
 
+global skip_filesize
+
 # filename      path to a file whose contents should be digested
 def hash_file(filename):
     # I have not done any testing on performance of various algos and blocksizes
@@ -94,8 +96,12 @@ def dispatch_prework(heres, torrentfile):
 # hash_info     dictionary (key: filename, val: hash) of files in --here
 def postwork_do_files(filelist, here, size_info, hash_info):
     for therefile in filelist:
-        # try to find therefile's size in size_info
-        if str(os.path.getsize(therefile)) in size_info.values():
+        # try to find therefile's size in size_info if not skipping filesize
+        global skip_filesize
+        if (
+        skip_filesize or
+        str(os.path.getsize(therefile)) in size_info.values()
+        ):
             # hash therefile if size if found
             therehash = hash_file(therefile)
             # try to find hash. this time use .items() because we want the key
@@ -208,8 +214,11 @@ Postwork requires at least one here AND at least one there.'''
     parser.add_argument('-H', '--here', metavar='dir', nargs='+')
     parser.add_argument('-T', '--there', metavar='dir', nargs='+')
     parser.add_argument('-t', '--torrent', metavar='torrentfile')
+    parser.add_argument('--skip-filesize', action='store_const', const=1)
     args = parser.parse_args()
     if (args.job == 'prework'):
+    global skip_filesize
+    skip_filesize = (True if args.skip_filesize else False)
         if (not args.here and not args.torrent):
             print("Need --here or --torrent")
         elif (args.there):
