@@ -1,7 +1,10 @@
 # movenseed
 Recursive file linker handy for continued seeding of moved, renamed, and reorganized files
 
-## Usage 
+Requires python 3.  
+Tested using python 3.4.2 on ubuntu 14.10 x64
+
+## Usage
 
     movenseed.py [-h] -s {prework,postwork} [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile] [--skip-filesize] [-v]
 
@@ -9,7 +12,7 @@ Recursive file linker handy for continued seeding of moved, renamed, and reorgan
 * Use -s/--stage to tell movenseed what stage you would like to execute
 * Use -H/--here to provide a list of HERE directories
 * Use -T/--there to provide a list of THERE directories
-* __(NOT implemented yet)__ Use -t/--torrent to provide a torrent file instead of a HERE directory during prework 
+* __(NOT implemented yet)__ Use -t/--torrent to provide a torrent file instead of a HERE directory during prework
 * Use --skip-filesize to only check file hashes during postwork
 * Use -v/--verbose to print out lots of fun information
 
