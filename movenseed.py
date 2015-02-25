@@ -4,6 +4,7 @@ import hashlib
 import argparse
 
 global skip_filesize
+global be_verbose
 
 # filename      path to a file whose contents should be digested
 def hash_file(filename):
@@ -27,8 +28,12 @@ def prework_do_files(filelist, root_dirname, size_info, hash_info):
         # may be unecessary check in most use cases, but this fixed python
         # trying to read a symbolic link to nowhere
         if os.path.isfile(file):
+            if be_verbose: print("Finding size of " + file, end=' ... ')
             file_size = os.path.getsize(file)
+            if be_verbose: print(file_size)
+            if be_verbose: print("Finding hash of " + file, end=' ... ')
             file_hash = hash_file(file)
+            if be_verbose: print(file_hash)
             # - convert file to relative path for storing in *.mns
             # - the path is relative to root_dirname (abs dir of a --here)
             # - root_dirname will not end in a slash, so must do +1 to remove
@@ -96,6 +101,7 @@ def dispatch_prework(heres, torrentfile):
 # hash_info     dictionary (key: filename, val: hash) of files in --here
 def postwork_do_files(filelist, here, size_info, hash_info):
     for therefile in filelist:
+        if be_verbose: print("Checking " + therefile, end=' ... ')
         # try to find therefile's size in size_info if not skipping filesize
         global skip_filesize
         if (
@@ -112,6 +118,7 @@ def postwork_do_files(filelist, here, size_info, hash_info):
                     herefile = here+"/"+herefile
                     # if it already exists or is a valid symlic, don't replace
                     if os.path.isfile(herefile):
+                        if be_verbose: print("No (already in HERE)")
                         continue
                     # check if !isfile() but islink(), meaning it is a broken
                     # symlic and should be replaced
@@ -122,8 +129,16 @@ def postwork_do_files(filelist, here, size_info, hash_info):
                         os.mkdir(os.path.dirname(herefile))
                     # finally! make the link
                     os.symlink(therefile, herefile)
+                    if be_verbose: print("Yes! " + \
+                        os.path.basename(herefile) + \
+                        " now links to " + \
+                        os.path.basename(therefile) \
+                    )
                     break
-
+            else:
+                if be_verbose: print("No (hash)")
+        else:
+            if be_verbose: print("No (size)")
 # here          absolute path to a --here
 # dirname       absolute path to a --there or a sub of --there
 # size_info     dictionary (key: filename, val: size) of files in --here
@@ -219,10 +234,13 @@ Postwork requires at least one here AND at least one there.'''
     parser.add_argument('-T', '--there', metavar='dir', nargs='+')
     parser.add_argument('-t', '--torrent', metavar='torrentfile')
     parser.add_argument('--skip-filesize', action='store_const', const=1)
+    parser.add_argument('-v', '--verbose', action='store_const', const=1)
     args = parser.parse_args()
 
     global skip_filesize
+    global be_verbose
     skip_filesize = (True if args.skip_filesize else False)
+    be_verbose = (True if args.verbose else False)
 
     if (args.stage == 'prework'):
         if (not args.here and not args.torrent):
