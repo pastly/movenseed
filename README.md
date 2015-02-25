@@ -6,7 +6,7 @@ Tested using python 3.4.2 on ubuntu 14.10 x64
 
 ## Usage
 
-    movenseed.py [-h] -s {prework,postwork} [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile] [--skip-filesize] [-v]
+    movenseed.py [-h] -s {prework,postwork} [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile] [--skip-filesize] [--hard] [-v]
 
 * Use -h/--help anywhere to print help and quit
 * Use -s/--stage to tell movenseed what stage you would like to execute
@@ -14,6 +14,7 @@ Tested using python 3.4.2 on ubuntu 14.10 x64
 * Use -T/--there to provide a list of THERE directories
 * __(NOT implemented yet)__ Use -t/--torrent to provide a torrent file instead of a HERE directory during prework
 * Use --skip-filesize to only check file hashes during postwork
+* Use --hard to make hard links instead of symbolic links
 * Use -v/--verbose to print out lots of fun information
 
 ## Details and Examples

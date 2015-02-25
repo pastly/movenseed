@@ -5,6 +5,7 @@ import argparse
 
 global skip_filesize
 global be_verbose
+global use_hardlinks
 
 # filename      path to a file whose contents should be digested
 def hash_file(filename):
@@ -128,7 +129,10 @@ def postwork_do_files(filelist, here, size_info, hash_info):
                     if not os.path.isdir(os.path.dirname(herefile)):
                         os.mkdir(os.path.dirname(herefile))
                     # finally! make the link
-                    os.symlink(therefile, herefile)
+                    if use_hardlinks:
+                        os.link(therefile, herefile)
+                    else:
+                        os.symlink(therefile, herefile)
                     if be_verbose: print("Yes! " + \
                         os.path.basename(herefile) + \
                         " now links to " + \
@@ -234,13 +238,16 @@ Postwork requires at least one here AND at least one there.'''
     parser.add_argument('-T', '--there', metavar='dir', nargs='+')
     parser.add_argument('-t', '--torrent', metavar='torrentfile')
     parser.add_argument('--skip-filesize', action='store_const', const=1)
+    parser.add_argument('--hard', action='store_const', const=1)
     parser.add_argument('-v', '--verbose', action='store_const', const=1)
     args = parser.parse_args()
 
     global skip_filesize
     global be_verbose
+    global use_hardlinks
     skip_filesize = (True if args.skip_filesize else False)
     be_verbose = (True if args.verbose else False)
+    use_hardlinks = (True if args.hard else False)
 
     if (args.stage == 'prework'):
         if (not args.here and not args.torrent):
