@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-###############################################################################
+################################################################################
 # Author: Matt Traudt
 # Originally created: 2015-02-25
 # Maintained at: https://github.com/dms0Zq/movenseed.git
@@ -16,8 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-###############################################################################
+################################################################################
 import os
 import hashlib
 import argparse
