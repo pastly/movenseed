@@ -6,14 +6,15 @@ Tested using python 3.4.2 on ubuntu 14.10 x64
 
 ## Usage
 
-    movenseed.py [-h] -s {prework,postwork} [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile] [--skip-filesize] [--hard] [-v]
+    movenseed.py [-h] -s {prework,postwork} [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile] [--skip-filesize] [--skip-filehash] [--hard] [-v]
 
 * Use -h/--help anywhere to print help and quit
 * Use -s/--stage to tell movenseed what stage you would like to execute
 * Use -H/--here to provide a list of HERE directories
 * Use -T/--there to provide a list of THERE directories
-* __(NOT implemented yet)__ Use -t/--torrent to provide a torrent file instead of a HERE directory during prework
-* Use --skip-filesize to only check file hashes during postwork
+* Use -t/--torrent to provide a torrent file for generating size information in a single HERE directory
+* Use --skip-filesize to only generate hash info or to only check file hashes
+* Use --skip-filehash to only generate size info or to only check file sizes. This should only be used when prework had to be run with a torrentfile.
 * Use --hard to make hard links instead of symbolic links
 * Use -v/--verbose to print out lots of fun information
 
@@ -21,7 +22,7 @@ Tested using python 3.4.2 on ubuntu 14.10 x64
 
 ### Prework
 
-This stage will recursively read all files inside a given folder and its subfolders and store information on them. This information can be used in the Postwork stage to reconstruct the folder. Prework expects only HERE directories.
+This stage will recursively read all files inside a given HERE folder and its subfolders and store information on them. This information can be used in the Postwork stage to reconstruct the folder. Prework expects only HERE directories.
 
 * `./movenseed.py -s prework -H /music/BandName/Album`
   * This will prepare the given directory for changes. Stores file size and hash information in sizes.mns and hashes.mns respectively.
@@ -30,6 +31,11 @@ This stage will recursively read all files inside a given folder and its subfold
 * `./movenseed.py -s prework -H /music/BandName/*`
 * `./movenseed.py -s prework -H Documents/Work\ Files/`
 * `./movenseed.py -s prework -H ../projects`
+
+If given a torrentfile and a single HERE directory, Prework will generate size information for a HERE directory that is missing its files.
+
+* `./movenseed.py -s prework -t torrents/family-pics-1.torrent -H /media/pics/family`
+    * Generates size information based on information from the given torrent and puts it in the HERE directory.
 
 ### Postwork
 
@@ -43,4 +49,4 @@ This stage expects at least one HERE directory and at least one THERE directory.
 ## Notes
 
 * You may start to see poor performance when specifying many HEREs and THEREs. Try to be as specific as you can with THERE folders. It may also be good to know that a THERE is rescanned for each HERE. Future implementations may change this behavior.
-* This script works best when it was run before files were moved and renamed. Duh, because doing prework with a .torrent isn't implemented yet. Even when it is, if the scan of the .torrent file returns two or more files of the same size, I will either have the script refuse to run or require manual interaction.
+* This script works best when it was run before files were moved and renamed. In its current implementation, it will refuse to run if --skip-filehash is provided and sizes.mns contains non-unique sizes. Future implementations may have an interactive mode to let the user make decisions for same-sized files.
