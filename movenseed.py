@@ -227,15 +227,19 @@ Postwork requires at least one here AND at least one there.'''
     if (args.stage == 'prework'):
         if (not args.here and not args.torrent):
             print("Need --here or --torrent")
+            print("Aborting")
         elif (args.there):
             print("--there doesn't make sense with prework")
+            print("Aborting")
         else:
             dispatch_prework(args.here, args.torrent)
     else:
         if (not args.here or not args.there):
             print("Need --here and --there")
+            print("Aborting")
         elif (args.torrent):
             print("--torrent doesn't make sense with postwork")
+            print("Aborting")
         else:
             dispatch_postwork(
                 args.here,
