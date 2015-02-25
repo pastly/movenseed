@@ -2,8 +2,10 @@
 import os
 import hashlib
 import argparse
+import bencode
 
 global skip_filesize
+global skip_filehash
 global be_verbose
 global use_hardlinks
 
@@ -37,19 +39,23 @@ def prework_do_files(filelist, root_dirname, size_info, hash_info):
         # may be unecessary check in most use cases, but this fixed python
         # trying to read a symbolic link to nowhere
         if os.path.isfile(file):
-            if be_verbose: print("Finding size of " + file, end=' ... ')
-            file_size = os.path.getsize(file)
-            if be_verbose: print(file_size)
-            if be_verbose: print("Finding hash of " + file, end=' ... ')
-            file_hash = hash_file(file)
-            if be_verbose: print(file_hash)
+            if not skip_filesize:
+                if be_verbose: print("Finding size of " + file, end=' ... ')
+                file_size = os.path.getsize(file)
+                if be_verbose: print(file_size)
+            if not skip_filehash:
+                if be_verbose: print("Finding hash of " + file, end=' ... ')
+                file_hash = hash_file(file)
+                if be_verbose: print(file_hash)
             # - convert file to relative path for storing in *.mns
             # - the path is relative to root_dirname (abs dir of a --here)
             # - root_dirname will not end in a slash, so must do +1 to remove
             # slash too
             file = os.path.realpath(file)[len(root_dirname)+1:]
-            size_info.append(str(file_size) + "\t" + file + "\n")
-            hash_info.append(file_hash + "\t" + file + "\n")
+            if not skip_filesize:
+                size_info.append(str(file_size) + "\t" + file + "\n")
+            if not skip_filehash:
+                hash_info.append(file_hash + "\t" + file + "\n")
 
 # dirname       a --here or subdir of --here
 # root_dirname  absolute path of a --here
@@ -83,26 +89,55 @@ def prework(passed_source_dirname):
         os.path.realpath(passed_source_dirname),
         size_info,
         hash_info
-     )
-     # write all those lines to files in a --here
-    with open(passed_source_dirname+"/sizes.mns", "w") as size_outfile:
-        for item in size_info:
-            size_outfile.write(item)
-    with open(passed_source_dirname+"/hashes.mns", "w") as hash_outfile:
-        for item in hash_info:
-            hash_outfile.write(item)
+    )
+    # write all those lines to files in a --here
+    if not skip_filesize:
+        with open(passed_source_dirname+"/sizes.mns", "w") as size_outfile:
+            for item in size_info:
+                size_outfile.write(item)
+    if not skip_filehash:
+        with open(passed_source_dirname+"/hashes.mns", "w") as hash_outfile:
+            for item in hash_info:
+                hash_outfile.write(item)
+
+# here          absolute path to a here
+# torrentfile   a torrent file to source info
+def torrentfile_prework(here, torrentfile):
+    b = bencode.load(torrentfile)
+    # the desired infor is stored in 1 of 2 ways in the .torrent file based on
+    # how many files it is for. determine which way the info is stored and
+    # extract it
+    size_info = []
+    if "files" in b['info']:
+        for f in b['info']['files']:
+            size = f['length']
+            path = ""
+            for p in f['path']:
+                path += p+"/"
+            path = path[:-1] # remove last trailing slash
+            size_info.append(str(size)+"\t"+path+'\n')
+            with open(here+"/sizes.mns", "w") as size_outfile:
+                for item in size_info:
+                    size_outfile.write(item)
+    elif "name" in b['info']:
+        size_info.append(str(b['info']['length'])+"\t"+b['info']['name']+'\n')
+        with open(here+"/sizes.mns", "w") as size_outfile:
+            for item in size_info:
+                size_outfile.write(item)
+    else:
+        print("idk what to do")
 
 # heres         list of --here's
 # torrentfile   name of a torrentfile
 def dispatch_prework(heres, torrentfile):
     # choose what type of prework to do based on what options exists
-    if (not heres and torrentfile):
-        print("Not yet implemented")
+    if (heres and len(heres) == 1 and torrentfile):
+        torrentfile_prework(os.path.realpath(heres[0]), torrentfile)
     elif (heres):
         for here in heres:
             prework(here)
     else:
-        print("How did you get this far without getting caught?")
+        print("Specify multiple HEREs or a single HERE and a torrentfile")
 
 # filelist      list of filenames in a --there or a subdir of -there
 # here          absolute path to a --here
@@ -112,43 +147,68 @@ def postwork_do_files(filelist, here, size_info, hash_info):
     for therefile in filelist:
         if be_verbose: print("Checking " + therefile, end=' ... ')
         # try to find therefile's size in size_info if not skipping filesize
-        global skip_filesize
         if (
         skip_filesize or
         str(os.path.getsize(therefile)) in size_info.values()
         ):
-            # hash therefile if size if found
-            therehash = hash_file(therefile)
-            # try to find hash. this time use .items() because we want the key
-            # in addition to the values
-            for herefile, herehash in hash_info.items():
-                if therehash == herehash:
-                    # found, so make herefile an absolute path
-                    herefile = here+"/"+herefile
-                    # if it already exists or is a valid symlic, don't replace
-                    if os.path.isfile(herefile):
-                        if be_verbose: print("No (already in HERE)")
-                        continue
-                    # check if !isfile() but islink(), meaning it is a broken
-                    # symlic and should be replaced
-                    elif os.path.islink(herefile):
-                        os.remove(herefile)
-                    # make directory for the symlic to go in if needed
-                    if not os.path.isdir(os.path.dirname(herefile)):
-                        os.mkdir(os.path.dirname(herefile))
-                    # finally! make the link
-                    if use_hardlinks:
-                        os.link(therefile, herefile)
-                    else:
-                        os.symlink(therefile, herefile)
-                    if be_verbose: print("Yes! " + \
-                        os.path.basename(herefile) + \
-                        " now links to " + \
-                        os.path.basename(therefile) \
-                    )
-                    break
+            if not skip_filehash:
+                # hash therefile if size if found
+                therehash = hash_file(therefile)
+                # try to find hash. this time use .items() because we want the
+                # key in addition to the values
+                for herefile, herehash in hash_info.items():
+                    if therehash == herehash:
+                        # found, so make herefile an absolute path
+                        herefile = here+"/"+herefile
+                        # if it already exists or is a valid symlic, don't
+                        # replace it
+                        if os.path.isfile(herefile):
+                            if be_verbose: print("No (already in HERE)")
+                            continue
+                        # check if !isfile() but islink(), meaning it is a
+                        # broken symlic and should be replaced
+                        elif os.path.islink(herefile):
+                            os.remove(herefile)
+                        # make directory for the symlic to go in if needed
+                        if not os.path.isdir(os.path.dirname(herefile)):
+                            os.makedirs(os.path.dirname(herefile))
+                        # finally! make the link
+                        make_link(therefile, herefile)
+                        if be_verbose: print("Yes! " + \
+                            os.path.basename(herefile) + \
+                            " now links to " + \
+                            os.path.basename(therefile) \
+                        )
+                        break
+                else:
+                    if be_verbose: print("No (hash)")
             else:
-                if be_verbose: print("No (hash)")
+                # very dangerous if files are not unique sizes!!!
+                theresize = str(os.path.getsize(therefile))
+                for herefile, heresize in size_info.items():
+                    if theresize == heresize:
+                        # found, so make herefile an absolute path
+                        herefile = here+"/"+herefile
+                        # if it already exists or is a valid symlic, don't
+                        # replace it
+                        if os.path.isfile(herefile):
+                            if be_verbose: print("No (already in HERE)")
+                            continue
+                        # check if !isfile() but islink(), meaning it is a
+                        # broken symlic and should be replaced
+                        elif os.path.islink(herefile):
+                            os.remove(herefile)
+                        # make directory for the symlic to go in if needed
+                        if not os.path.isdir(os.path.dirname(herefile)):
+                            os.makedirs(os.path.dirname(herefile))
+                        make_link(therefile, herefile)
+                        if be_verbose: print("Yes! " + \
+                            os.path.basename(herefile) + \
+                            " now links to " + \
+                            os.path.basename(therefile) \
+                        )
+                        break
+
         else:
             if be_verbose: print("No (size)")
 # here          absolute path to a --here
@@ -202,27 +262,37 @@ def dispatch_postwork(heres, theres):
         # make sure size file and hash file are where they are expected
         size_filename = here+"/sizes.mns"
         hash_filename = here+"/hashes.mns"
-        if (
-        not os.path.isfile(size_filename) or
-        not os.path.isfile(hash_filename)
-        ):
-            print("Could not find sizes.mns or hashes.mns in " + here)
+        if not skip_filesize and not os.path.isfile(size_filename):
+            print("Could not find sizes.mns")
+            continue
+        if not skip_filehash and not os.path.isfile(hash_filename):
+            print("Could not find hashes.mns")
             continue
         # read in all that glorious size and hash info
-        with open(size_filename, "r") as size_file:
-            for line in size_file:
-                # size and filename are seperated by a tab
-                # partition all but the last char on a line (a \n) on the first
-                # occurence of a tab
-                size, _, filename = line[:-1].partition('\t')
-                size_info[filename] = size
-        with open(hash_filename, "r") as hash_file:
-            for line in hash_file:
-                # hash and filename are seperated by a tab
-                # partition all but the last char on a line (a \n) on the first
-                # occurence of a tab
-                hash, _, filename = line[:-1].partition('\t')
-                hash_info[filename] = hash
+        if not skip_filesize:
+            with open(size_filename, "r") as size_file:
+                for line in size_file:
+                    # size and filename are seperated by a tab
+                    # partition all but the last char on a line (a \n) on the
+                    # first occurence of a tab
+                    size, _, filename = line[:-1].partition('\t')
+                    size_info[filename] = size
+        if not skip_filehash:
+            with open(hash_filename, "r") as hash_file:
+                for line in hash_file:
+                    # hash and filename are seperated by a tab
+                    # partition all but the last char on a line (a \n) on the
+                    # first occurence of a tab
+                    hash, _, filename = line[:-1].partition('\t')
+                    hash_info[filename] = hash
+        # currently, if sizes are non-unique, refuse to do postwork until
+        # interactive mode is implemented
+        if skip_filehash:
+            unique_sizes_set = set([val for val in size_info.values()])
+            if len(size_info) != len(unique_sizes_set):
+                print("Files of non-unique size.")
+                print("Won't run until interactive mode implemented")
+                return
         # send off all this jazz to postwork
         postwork(here, theres, size_info, hash_info)
 
@@ -246,14 +316,19 @@ Postwork requires at least one here AND at least one there.'''
     parser.add_argument('-T', '--there', metavar='dir', nargs='+')
     parser.add_argument('-t', '--torrent', metavar='torrentfile')
     parser.add_argument('--skip-filesize', action='store_const', const=1)
+    parser.add_argument('--skip-filehash', action='store_const', const=1)
+    #parser.add_argument('--skip-filehash-interactive', action='store_const',
+    #const=1)
     parser.add_argument('--hard', action='store_const', const=1)
     parser.add_argument('-v', '--verbose', action='store_const', const=1)
     args = parser.parse_args()
 
     global skip_filesize
+    global skip_filehash
     global be_verbose
     global use_hardlinks
     skip_filesize = (True if args.skip_filesize else False)
+    skip_filehash = (True if args.skip_filehash else False)
     be_verbose = (True if args.verbose else False)
     use_hardlinks = (True if args.hard else False)
 
