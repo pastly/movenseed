@@ -20,6 +20,14 @@ def hash_file(filename):
             algo.update(buf)
     return algo.hexdigest()
 
+# source        absolute source file name
+# dest          absolute destination file name
+def make_link(source, dest):
+    if use_hardlinks:
+        os.link(source, dest)
+    else:
+        os.symlink(source, dest)
+
 # filelist      list of filenames
 # root_dirname  absolute path of a --here
 # size_info     list of strings
@@ -164,8 +172,8 @@ def postwork_do_directory(here, dirname, size_info, hash_info):
     for dir in contained_directories:
         postwork_do_directory(here, dir, size_info, hash_info)
 
-# here      absolute path to a single --here
-# theres    list of untouched --theres
+# here          absolute path to a single --here
+# theres        list of untouched --theres
 # size_info     dictionary (key: filename, val: size) of files in --here
 # hash_info     dictionary (key: filename, val: hash) of files in --here
 def postwork(here, theres, size_info, hash_info):
@@ -175,7 +183,7 @@ def postwork(here, theres, size_info, hash_info):
             print(there+" is not a directory")
             continue
         # change there into absolute path, as no relativity needed here
-        #we are evil and siths deal in absolutes
+        # we are on the dark side and siths deal in absolutes
         there = os.path.realpath(there)
         # start the recursion!
         postwork_do_directory(here, there, size_info, hash_info)
