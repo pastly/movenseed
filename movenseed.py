@@ -22,11 +22,26 @@ import hashlib
 import argparse
 import bencode
 
+global version
 global skip_filesize
 global skip_filehash
 global be_verbose
 global use_hardlinks
 global make_subdirectory
+
+def init_globals():
+    global version
+    global skip_filesize
+    global skip_filehash
+    global be_verbose
+    global use_hardlinks
+    global make_subdirectory
+    version = "v1.0"
+    skip_filesize = False
+    skip_filehash = False
+    be_verbose = False
+    use_hardlinks = False
+    make_subdirectory = True
 
 # filename      path to a file whose contents should be digested
 def hash_file(filename):
@@ -344,10 +359,14 @@ def dispatch_postwork(heres, theres):
         postwork(here, theres, size_info, hash_info)
 
 if __name__ == "__main__":
-    descrip = '''
-Advanced file linker.'''
+    init_globals()
+    global version
+    descrip = "Move and Seed "+version+'''
+Advanced file linker'''
     epil = '''
-Prework requires either a torrentfile OR at least one here.
+Prework requires either
+    1. at least 1 HERE,
+    2. at least 1 torrentfile and only 1 HERE
 Postwork requires at least one here AND at least one there.'''
     parser = argparse.ArgumentParser(
         description=descrip,
@@ -357,19 +376,64 @@ Postwork requires at least one here AND at least one there.'''
     parser.add_argument(
         '-s', '--stage',
         choices=['prework','postwork'],
-        required=True
+        help='choose stage to run'
     )
-    parser.add_argument('-H', '--here', metavar='dir', nargs='+')
-    parser.add_argument('-T', '--there', metavar='dir', nargs='+')
-    parser.add_argument('-t', '--torrent', metavar='torrentfile', nargs='+')
-    parser.add_argument('--skip-filesize', action='store_const', const=1)
-    parser.add_argument('--skip-filehash', action='store_const', const=1)
-    #parser.add_argument('--skip-filehash-interactive', action='store_const',
-    #const=1)
-    parser.add_argument('--no-make-subdirectory', action='store_const', const=1)
-    parser.add_argument('--hard', action='store_const', const=1)
-    parser.add_argument('-v', '--verbose', action='store_const', const=1)
+    parser.add_argument(
+        '--version',
+        action='store_const',
+        const=1,
+        help='prints version and exits'
+    )
+    parser.add_argument(
+        '-H', '--here',
+        metavar='dir',
+        nargs='+',
+        help='1+ directory that you want to seed from'
+    )
+    parser.add_argument(
+        '-T', '--there',
+        metavar='dir',
+        nargs='+',
+        help='1+ directory containing moved/renamed files'
+    )
+    parser.add_argument(
+        '-t', '--torrent',
+        metavar='torrentfile',
+        nargs='+',
+        help='1+ torrent file to extract size info from during prework'
+    )
+    parser.add_argument(
+        '--skip-filesize',
+        action='store_const',
+        const=1,
+        help='Skip making sizes.mns or skip checking sizes'
+    )
+    parser.add_argument(
+        '--skip-filehash',
+        action='store_const',
+        const=1,
+        help='Skip making hashes.mns or skip checking hashes'
+    )
+    parser.add_argument(
+        '--no-make-subdirectory',
+        action='store_const',
+        const=1,
+        help='Do not make subdirectories for multi-file torrents'
+    )
+    parser.add_argument(
+        '--hard',
+        action='store_const',
+        const=1,
+        help='Make hard links instead of symbolic links'
+    )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_const',
+        const=1,
+
+    )
     args = parser.parse_args()
+
 
     global skip_filesize
     global skip_filehash
@@ -382,7 +446,11 @@ Postwork requires at least one here AND at least one there.'''
     use_hardlinks = (True if args.hard else False)
     make_subdirectory = (False if args.no_make_subdirectory else True)
 
-    if (args.stage == 'prework'):
+    if args.version:
+        print(descrip)
+    elif not args.stage:
+        parser.print_help()
+    elif (args.stage == 'prework'):
         if (not args.here and not args.torrent):
             print("Need --here or --torrent")
             print("Aborting")
@@ -391,7 +459,7 @@ Postwork requires at least one here AND at least one there.'''
             print("Aborting")
         else:
             dispatch_prework(args.here, args.torrent)
-    else:
+    elif (args.stage == 'postwork'):
         if (not args.here or not args.there):
             print("Need --here and --there")
             print("Aborting")
@@ -403,3 +471,5 @@ Postwork requires at least one here AND at least one there.'''
                 args.here,
                 args.there
             )
+    else:
+        parser.print_help()
