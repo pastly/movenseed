@@ -8,22 +8,22 @@ Tested using python 3.4.2 on Ubuntu 14.10 x64
 
     movenseed.py [-h] -s {prework,postwork} [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile] [--skip-filesize] [--skip-filehash] [--no-make-subdirectory] [--hard] [-v]
 
-* `-h/--help` anywhere to print help and quit
-* `-s/--stage` to tell movenseed what stage you would like to execute
-* `-H/--here` to provide a list of HERE directories
-* `-T/--there` to provide a list of THERE directories
-* `-t/--torrent` to provide a torrent file for generating size information in a single HERE directory
-* `--skip-filesize` to only generate hash info or to only check file hashes
-* `--skip-filehash` to only generate size info or to only check file sizes. For best results, this should only be used when prework had to be run with a torrentfile only.
-* `--no-make-subdirectory` during prework with a torrentfile and a HERE to skip making a directory for a torrentfile containing more than one file reference.
-* `--hard` to make hard links instead of symbolic links
-* `-v/--verbose` to print out lots of fun information
+* `-h/--help` Print help and quit.
+* `-s/--stage` Tell movenseed what stage you would like to execute.
+* `-H/--here` Provide a list of HERE directories.
+* `-T/--there` Provide a list of THERE directories.
+* `-t/--torrent` Provide torrent files for generating size information in a single HERE directory.
+* `--skip-filesize` Only generate hash info or to only check file hashes.
+* `--skip-filehash` Only generate size info or to only check file sizes. For best results, this should only be used when prework had to be run with a torrentfile only.
+* `--no-make-subdirectory` **Not recommended.** During prework with a torrentfile and a HERE, skip making a directory for a torrentfile containing more than one file reference.
+* `--hard` Make hard links instead of symbolic links. Probably only works on Linux and definitely doesn't work across filesystems.
+* `-v/--verbose` Print out lots of fun information. Default is to run pretty darn quiet.
 
 ## Details and Examples
 
 ### Prework
 
-This stage will recursively read all files inside a given HERE folder and its subfolders and store information on them. This information can be used in the Postwork stage to reconstruct the folder. Prework expects only HERE directories.
+This stage will recursively read all files inside a given HERE folder and its subfolders and store information on them. This information can be used in the postwork stage to reconstruct the folder. Prework does not expect and will not take THERE directories.
 
 * `./movenseed.py -s prework -H /music/BandName/Album`
   * This will prepare the given directory for changes. Stores file size and hash information in sizes.mns and hashes.mns respectively.
@@ -33,12 +33,14 @@ This stage will recursively read all files inside a given HERE folder and its su
 * `./movenseed.py -s prework -H Documents/Work\ Files/`
 * `./movenseed.py -s prework -H ../projects`
 
-If given a torrentfile and a single HERE directory, Prework will generate size information for a HERE directory that is missing its files. Without the --no-make-subdirectory option, prework will create a subdirectory in HERE using the name contained in the torrentfile and place sizes.mns in that. If the torrentfile is only for a single file, the flag is ignored and no subdirectory is made
+If given torrentfiles and a single HERE directory, prework will generate size (not hash) information for a HERE directory that is missing its files. For torrents that would download multiple files, a subdirectory under HERE will be made for it (unless `--no-make-subdirectory` is specified). Multiple torrentfiles can be given. This isn't recommended with a mix of torrents for a single file and torrents for multiple files because the placement and contents of the sizes.mns may be unexpected, especially if you are crazy enough to give `--no-make-subdirectory`.
 
 * `./movenseed.py -s prework -t torrents/family-pics-1.torrent -H /media/pics/family`
-    * Generates size information based on information from the given torrent and puts it a subdirectory of HERE. For example: "HERE/family pics 1"
- * `./movenseed.py -s prework -t torrents/xtreme-linux.iso.torrent -H /media/linuxes`
-    * Similar to the above, but does not make a subdirectory in HERE since the torrentfile would only download a single file. 
+    * Generates size information based on information from the given torrent and puts it a subdirectory of HERE. For example: "/media/pics/family/family pics 1/sizes.mns"
+* `./movenseed.py -s prework -t torrents/family-pics-*.torrent -H /media/pics/family`
+    * If multiple torrentfiles are given (and each is for multiple files) this will make a subdirectory for each inside of HERE.
+* `./movenseed.py -s prework -t torrents/xtreme-linux.iso.torrent -H /media/linuxes`
+    * Since the torrentfile would only download a single file, size information is placed in /media/linuxes/sizes.mns"
 
 ### Postwork
 
