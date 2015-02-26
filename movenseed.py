@@ -59,11 +59,11 @@ def prework_do_files(filelist, root_dirname, size_info, hash_info):
         # trying to read a symbolic link to nowhere
         if os.path.isfile(file):
             if not skip_filesize:
-                if be_verbose: print("Finding size of " + file, end=' ... ')
+                if be_verbose: print("Finding size of", file, end=' ... ')
                 file_size = os.path.getsize(file)
                 if be_verbose: print(file_size)
             if not skip_filehash:
-                if be_verbose: print("Finding hash of " + file, end=' ... ')
+                if be_verbose: print("Finding hash of", file, end=' ... ')
                 file_hash = hash_file(file)
                 if be_verbose: print(file_hash)
             # - convert file to relative path for storing in *.mns
@@ -112,11 +112,15 @@ def prework(passed_source_dirname):
     # write all those lines to files in a --here
     if not skip_filesize:
         with open(passed_source_dirname+"/sizes.mns", "w") as size_outfile:
+            if be_verbose: print("Writing (overwriting)",passed_source_dirname+"/sizes.mns")
             for item in size_info:
+                if be_verbose: print(item, end='')
                 size_outfile.write(item)
     if not skip_filehash:
         with open(passed_source_dirname+"/hashes.mns", "w") as hash_outfile:
+            if be_verbose: print("Writing (overwriting)",passed_source_dirname+"/hashes.mns")
             for item in hash_info:
+                if be_verbose: print(item, end='')
                 hash_outfile.write(item)
 
 # here          absolute path to a here
@@ -146,7 +150,9 @@ def torrentfile_prework(here, torrentfile):
             path = path[:-1] # remove last trailing slash
             size_info.append(str(size)+"\t"+path+'\n')
         with open(here+"/sizes.mns", "w") as size_outfile:
+            if be_verbose: print("Writing (overwriting)", here+"/sizes.mns")
             for item in size_info:
+                if be_verbose: print(item, end='')
                 size_outfile.write(item)
     # option 2: there is one file
     elif "name" in b['info']:
@@ -157,7 +163,9 @@ def torrentfile_prework(here, torrentfile):
         # but I image this is the most common scenario.
         #with open(here+"/sizes.mns", "w") as size_outfile:
         with open(here+"/sizes.mns", "a") as size_outfile:
+            if be_verbose: print("Writing (appending)", here+"/sizes.mns")
             for item in size_info:
+                if be_verbose: print(item, end='')
                 size_outfile.write(item)
     else:
         print("idk what to do")
@@ -184,7 +192,7 @@ def dispatch_prework(heres, torrentfiles):
 # hash_info     dictionary (key: filename, val: hash) of files in --here
 def postwork_do_files(filelist, here, size_info, hash_info):
     for therefile in filelist:
-        if be_verbose: print("Checking " + therefile, end=' ... ')
+        if be_verbose: print("Checking",therefile, end=' ... ')
         # try to find therefile's size in size_info if not skipping filesize
         if (
         skip_filesize or
@@ -213,10 +221,10 @@ def postwork_do_files(filelist, here, size_info, hash_info):
                             os.makedirs(os.path.dirname(herefile))
                         # finally! make the link
                         make_link(therefile, herefile)
-                        if be_verbose: print("Yes! " + \
-                            os.path.basename(herefile) + \
-                            " now links to " + \
-                            os.path.basename(therefile) \
+                        if be_verbose: print("Yes!",
+                            os.path.basename(herefile),
+                            "now links to",
+                            os.path.basename(therefile)
                         )
                         break
                 else:
@@ -241,10 +249,10 @@ def postwork_do_files(filelist, here, size_info, hash_info):
                         if not os.path.isdir(os.path.dirname(herefile)):
                             os.makedirs(os.path.dirname(herefile))
                         make_link(therefile, herefile)
-                        if be_verbose: print("Yes! " + \
-                            os.path.basename(herefile) + \
-                            " now links to " + \
-                            os.path.basename(therefile) \
+                        if be_verbose: print("Yes!",
+                            os.path.basename(herefile),
+                            "now links to",
+                            os.path.basename(therefile)
                         )
                         break
 
@@ -279,7 +287,7 @@ def postwork(here, theres, size_info, hash_info):
     for there in theres:
         # make sure there is a directory
         if (not os.path.isdir(there)):
-            print(there+" is not a directory")
+            print(there,"is not a directory")
             continue
         # change there into absolute path, as no relativity needed here
         # we are on the dark side and siths deal in absolutes
