@@ -138,7 +138,7 @@ def torrentfile_prework(here, torrentfile):
         # for every file in the info, gets its size and path
         for f in b['info']['files']:
             size = f['length']
-            # path is broken up in an array, so read all the elements and put 
+            # path is broken up in an array, so read all the elements and put
             # them together into a string
             path = ""
             for p in f['path']:
@@ -151,23 +151,32 @@ def torrentfile_prework(here, torrentfile):
     # option 2: there is one file
     elif "name" in b['info']:
         size_info.append(str(b['info']['length'])+"\t"+b['info']['name']+'\n')
-        with open(here+"/sizes.mns", "w") as size_outfile:
+        # changed to append in case multiple torrentfiles that each would
+        # download a single file are specified since they all will try to make
+        # the same sizes.mns. They may have adverse affects in other scenarios,
+        # but I image this is the most common scenario.
+        #with open(here+"/sizes.mns", "w") as size_outfile:
+        with open(here+"/sizes.mns", "a") as size_outfile:
             for item in size_info:
                 size_outfile.write(item)
     else:
         print("idk what to do")
 
-# heres         list of --here's
-# torrentfile   name of a torrentfile
-def dispatch_prework(heres, torrentfile):
+# heres         one or more --here's
+# torrentfile   one or more torrent files
+def dispatch_prework(heres, torrentfiles):
     # choose what type of prework to do based on what options exists
-    if (heres and len(heres) == 1 and torrentfile):
-        torrentfile_prework(os.path.realpath(heres[0]), torrentfile)
-    elif (heres):
+    if (heres and len(heres) == 1 and torrentfiles):
+        if not skip_filesize:
+            for torrentfile in torrentfiles:
+                torrentfile_prework(os.path.realpath(heres[0]), torrentfile)
+        else:
+            print("Nothing to do")
+    elif (heres and not torrentfiles):
         for here in heres:
             prework(here)
     else:
-        print("Specify multiple HEREs or a single HERE and a torrentfile")
+        print("Specify 1+ HEREs or 1 HERE and 1+ torrentfiles")
 
 # filelist      list of filenames in a --there or a subdir of -there
 # here          absolute path to a --here
@@ -344,7 +353,7 @@ Postwork requires at least one here AND at least one there.'''
     )
     parser.add_argument('-H', '--here', metavar='dir', nargs='+')
     parser.add_argument('-T', '--there', metavar='dir', nargs='+')
-    parser.add_argument('-t', '--torrent', metavar='torrentfile')
+    parser.add_argument('-t', '--torrent', metavar='torrentfile', nargs='+')
     parser.add_argument('--skip-filesize', action='store_const', const=1)
     parser.add_argument('--skip-filehash', action='store_const', const=1)
     #parser.add_argument('--skip-filehash-interactive', action='store_const',
