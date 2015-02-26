@@ -26,6 +26,7 @@ global skip_filesize
 global skip_filehash
 global be_verbose
 global use_hardlinks
+global make_subdirectory
 
 # filename      path to a file whose contents should be digested
 def hash_file(filename):
@@ -126,17 +127,28 @@ def torrentfile_prework(here, torrentfile):
     # how many files it is for. determine which way the info is stored and
     # extract it
     size_info = []
+    # option 1: there are multiple files
     if "files" in b['info']:
+        # set here to be a sub directory of HERE called the name located in the
+        # torrent info if flag isn't set
+        if make_subdirectory:
+            here = here + "/" + b['info']['name']
+            if not os.path.isdir(here):
+                os.makedirs(here)
+        # for every file in the info, gets its size and path
         for f in b['info']['files']:
             size = f['length']
+            # path is broken up in an array, so read all the elements and put 
+            # them together into a string
             path = ""
             for p in f['path']:
-                path += p+"/"
+                path += p+"/" # add slah between directories
             path = path[:-1] # remove last trailing slash
             size_info.append(str(size)+"\t"+path+'\n')
-            with open(here+"/sizes.mns", "w") as size_outfile:
-                for item in size_info:
-                    size_outfile.write(item)
+        with open(here+"/sizes.mns", "w") as size_outfile:
+            for item in size_info:
+                size_outfile.write(item)
+    # option 2: there is one file
     elif "name" in b['info']:
         size_info.append(str(b['info']['length'])+"\t"+b['info']['name']+'\n')
         with open(here+"/sizes.mns", "w") as size_outfile:
@@ -337,6 +349,7 @@ Postwork requires at least one here AND at least one there.'''
     parser.add_argument('--skip-filehash', action='store_const', const=1)
     #parser.add_argument('--skip-filehash-interactive', action='store_const',
     #const=1)
+    parser.add_argument('--no-make-subdirectory', action='store_const', const=1)
     parser.add_argument('--hard', action='store_const', const=1)
     parser.add_argument('-v', '--verbose', action='store_const', const=1)
     args = parser.parse_args()
@@ -345,10 +358,12 @@ Postwork requires at least one here AND at least one there.'''
     global skip_filehash
     global be_verbose
     global use_hardlinks
+    global make_subdirectory
     skip_filesize = (True if args.skip_filesize else False)
     skip_filehash = (True if args.skip_filehash else False)
     be_verbose = (True if args.verbose else False)
     use_hardlinks = (True if args.hard else False)
+    make_subdirectory = (False if args.no_make_subdirectory else True)
 
     if (args.stage == 'prework'):
         if (not args.here and not args.torrent):
