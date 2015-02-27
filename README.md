@@ -6,10 +6,11 @@ Tested using python 3.4.2 on Ubuntu 14.10 x64
 
 ## Usage
 
-    movenseed.py [-h] -s {prework,postwork} [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile] [--skip-filesize] [--skip-filehash] [--no-make-subdirectory] [--hard] [-v]
+    movenseed.py [-h] -s {prework,postwork} [--version] [-H dir [dir ...]] [-T dir [dir ...]] [-t torrentfile [torrentfile ...]] [--skip-filesize] [--skip-filehash] [--no-make-subdirectory] [--hard] [-v]
 
 * `-h/--help` Print help and quit.
 * `-s/--stage` Tell movenseed what stage you would like to execute.
+* `--version` Print version message and exit.
 * `-H/--here` Provide a list of HERE directories.
 * `-T/--there` Provide a list of THERE directories.
 * `-t/--torrent` Provide torrent files for generating size information in a single HERE directory.
