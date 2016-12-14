@@ -2,7 +2,7 @@
 ################################################################################
 # Author: Matt Traudt
 # Originally created: 2015-02-25
-# Maintained at: https://github.com/dms0Zq/movenseed.git
+# Maintained at: https://github.com/pastly/movenseed.git
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
